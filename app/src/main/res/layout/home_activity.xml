@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_F2F3F8">
+
+    <!-- Top include -->
+    <FrameLayout
+        android:id="@+id/layout_main_top_user"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <include
+            android:id="@+id/layout_main"
+            layout="@layout/main_top"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </FrameLayout>
+
+    <!-- Scrollable content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Camera preview -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="267dp"
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp"
+                android:layout_marginTop="@dimen/dp_20"
+                app:cardCornerRadius="16dp">
+
+                <androidx.camera.view.PreviewView
+                    android:id="@+id/previewView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- License plate view -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dp_80"
+                android:layout_marginTop="@dimen/dp_20"
+                android:layout_marginStart="@dimen/dp_30"
+                android:layout_marginEnd="@dimen/dp_30"
+                android:background="@drawable/bg_view_license_plate"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/iv_car"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_car"/>
+
+                <TextView
+                    android:id="@+id/tv_license_plate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_000000"
+                    android:textSize="@dimen/sp_36" />
+            </LinearLayout>
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_check"
+                android:layout_width="@dimen/dp_138"
+                android:layout_height="@dimen/dp_51"
+                android:layout_marginTop="@dimen/dp_20"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/check_license_plate"
+                android:textColor="@color/white"
+                android:textSize="@dimen/sp_20"
+                android:backgroundTint="@null"
+                android:visibility="visible"
+                android:background="@drawable/bg_check"/>
+            <LinearLayout
+                android:id="@+id/layout_action_buttons"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_32"
+                android:layout_gravity="center_horizontal"
+                android:visibility="gone">
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_input"
+                    android:layout_width="@dimen/dp_138"
+                    android:layout_height="@dimen/dp_51"
+                    android:text="@string/input_license_plate"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/sp_20"
+                    android:backgroundTint="@null"
+                    android:background="@drawable/bg_check"
+                    android:drawableEnd="@drawable/ic_log_in"
+                    android:drawablePadding="4dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:gravity="center"/>
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_output"
+                    android:layout_width="@dimen/dp_138"
+                    android:layout_height="@dimen/dp_51"
+                    android:layout_marginLeft="@dimen/dp_20"
+                    android:text="@string/output_license_plate"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/sp_20"
+                    android:backgroundTint="@null"
+                    android:background="@drawable/bg_check"
+                    android:drawableEnd="@drawable/ic_log_out"
+                    android:drawablePadding="4dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:gravity="center"/>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_20"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:orientation="horizontal"
+                android:weightSum="4">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/bg_stat_box"
+                    android:padding="8dp"
+                    android:gravity="center"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="總計"
+                        android:textColor="@color/color_000000"
+                        android:textStyle="bold"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tv_total_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_000000"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/bg_stat_box"
+                    android:padding="8dp"
+                    android:gravity="center"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="在場"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:textColor="#2E7D32" />
+                    <TextView
+                        android:id="@+id/tv_total_in"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textStyle="bold"
+                        android:textColor="#2E7D32"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/bg_stat_box"
+                    android:padding="8dp"
+                    android:gravity="center"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="已離場"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:textColor="#C62828" />
+                    <TextView
+                        android:id="@+id/tv_total_out"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textStyle="bold"
+                        android:textColor="#C62828"
+                        android:textSize="18sp" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/bg_stat_box"
+                    android:padding="8dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:elevation="2dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="空位"
+                        android:textStyle="bold"
+                        android:textSize="11sp"
+                        android:textColor="#1976D2" />
+                    <TextView
+                        android:id="@+id/tv_total_available"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textStyle="bold"
+                        android:textColor="#1976D2"
+                        android:textSize="16sp" />
+                </LinearLayout>
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/latest_List"
+                android:textSize="@dimen/sp_20"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginStart="@dimen/dp_30"
+                android:textStyle="bold"
+                android:textColor="@color/color_000000"/>
+
+            <!-- Latest list container -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_margin="@dimen/dp_20"
+                android:background="@drawable/bg_list_latest"
+                android:padding="@dimen/dp_10">
+
+                <!-- Header row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingTop="@dimen/dp_10"
+                    android:paddingBottom="@dimen/dp_10">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="ID"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_000000"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.5"
+                        android:text="車牌"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_000000"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:text="進入時間"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_000000"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:text="退出時間"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_000000"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE"/>
+
+                <!-- RecyclerView thay cho ListView -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewLatest"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:scrollbars="vertical"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

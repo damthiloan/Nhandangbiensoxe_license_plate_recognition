@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Parking_Car</string>
+    <string name="check_license_plate">檢查</string>
+    <string name="input_license_plate">入口</string>
+    <string name="output_license_plate">出口</string>
+    <string name="latest_List">所有車輛列表</string>
+    <string name="parking_space">車位</string>
+    <string name="license_plate">車牌</string>
+    <string name="entrance_time">入口時間</string>
+    <string name="export_time">出口時間</string>
+    <string name="exit">出口</string>
+    <string name="entrance">入口</string>
+</resources>

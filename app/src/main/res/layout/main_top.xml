@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:background="@color/color_25427A"
+    android:layout_height="@dimen/dp_130">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/dp_15"
+        android:layout_marginTop="@dimen/dp_59">
+        <ImageView
+            android:layout_width="@dimen/dp_40"
+            android:layout_height="@dimen/dp_40"
+            android:layout_marginTop="@dimen/dp_15"
+            android:layout_marginStart="@dimen/dp_30"
+            android:src="@drawable/ic_menu"/>
+        <androidx.appcompat.widget.AppCompatButton
+            android:layout_width="@dimen/dp_60"
+            android:layout_height="@dimen/dp_41"
+            android:background="@drawable/bg_area"
+            android:layout_marginTop="@dimen/dp_15"
+            android:text="A 區"
+            android:textSize="@dimen/sp_16"
+            android:backgroundTint="@null"
+            android:textColor="@color/color_25427A"
+            android:layout_marginLeft="@dimen/dp_71"/>
+        <androidx.appcompat.widget.AppCompatButton
+            android:layout_width="@dimen/dp_60"
+            android:layout_height="@dimen/dp_41"
+            android:background="@drawable/bg_area_blue"
+            android:layout_marginTop="@dimen/dp_15"
+            android:text="B 區"
+            android:backgroundTint="@null"
+            android:textSize="@dimen/sp_16"
+            android:textColor="@color/white"
+            android:layout_marginLeft="@dimen/dp_21"/>
+        <androidx.appcompat.widget.AppCompatButton
+            android:layout_width="@dimen/dp_60"
+            android:layout_height="@dimen/dp_41"
+            android:background="@drawable/bg_area_blue"
+            android:layout_marginTop="@dimen/dp_15"
+            android:text="C 區"
+            android:backgroundTint="@null"
+            android:textSize="@dimen/sp_16"
+            android:textColor="@color/white"
+            android:layout_marginLeft="@dimen/dp_21"
+            android:layout_marginRight="@dimen/dp_30"/>
+    </LinearLayout>
+</LinearLayout>

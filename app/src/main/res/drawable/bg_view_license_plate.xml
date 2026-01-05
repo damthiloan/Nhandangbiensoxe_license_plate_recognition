@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/dp_333"
+    android:height="@dimen/dp_80"
+    android:viewportWidth="361"
+    android:viewportHeight="108">
+
+    <!-- Bo góc radius 10 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M15,0
+            H351
+            A15,15 0 0 1 361,15
+            V98
+            A15,15 0 0 1 351,108
+            H10
+            A15,15 0 0 1 0,98
+            V10
+            A15,15 0 0 1 15,0
+            Z"/>
+</vector>
