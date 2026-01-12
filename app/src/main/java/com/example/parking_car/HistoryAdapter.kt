@@ -34,7 +34,7 @@ class HistoryAdapter(private var list: List<HistoryItem>) : RecyclerView.Adapter
         holder.tvExit.text = if (item.exitTime == "null") "--" else formatDateTime(item.exitTime)
 
         // 2. Xử lý Màu Nền và In Đậm cho xe đang ở trong bãi
-        if (item.exitTime == "null") {
+        if (item.exitTime == "在場") {
             // Màu nền khi xe ĐANG trong bãi (Xanh nhạt hoặc vàng tùy bạn chọn)
             holder.itemView.setBackgroundColor(android.graphics.Color.parseColor("#E3F2FD"))
 

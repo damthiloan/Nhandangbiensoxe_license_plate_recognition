@@ -5,11 +5,15 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
+import android.widget.Button
+import android.widget.GridLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -55,14 +59,22 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var tvTotalIn: TextView
     private lateinit var tvTotalOut: TextView
     private lateinit var tvTotalAvailable: TextView
-    private val MAX_CAPACITY = 50 // Giả định bãi có 50 chỗ
+    private val MAX_CAPACITY = 30 // Giả định bãi có 30 chỗ
+    private lateinit var btnKhuA: android.widget.Button
+    private lateinit var btnKhuB: android.widget.Button
+    private lateinit var btnKhuC: android.widget.Button
+    private var selectedLotId: String? = null
+    private var selectedAreaName: String = ""
+    // Biến lưu ID thực tế từ API
+    private var idKhuA: String = ""
+    private var idKhuB: String = ""
+    private var idKhuC: String = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.home_activity)
         recyclerViewLatest = findViewById(R.id.recyclerViewLatest)
         recyclerViewLatest.layoutManager = LinearLayoutManager(this)
         val layoutManager = LinearLayoutManager(this)
-        //đảo ngược danh sách
         layoutManager.reverseLayout = true
         layoutManager.stackFromEnd = true
         recyclerViewLatest.layoutManager = layoutManager
@@ -71,7 +83,7 @@ class HomeActivity : AppCompatActivity() {
         recyclerViewLatest.adapter = historyAdapter
         previewView = findViewById(R.id.previewView)
         tvLicensePlate = findViewById(R.id.tv_license_plate)
-        btnCheck = findViewById(R.id.btn_check) // Ánh xạ nút bấm
+        btnCheck = findViewById(R.id.btn_check)
         btnInput = findViewById(R.id.btn_input)
         btnOutput = findViewById(R.id.btn_output)
         layoutActions = btnInput.parent as android.widget.LinearLayout
@@ -82,12 +94,10 @@ class HomeActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, CAMERA_PERMISSION_CODE)
         }
 
-        //sự kiện tính tổng
         tvTotalAll = findViewById(R.id.tv_total_all)
         tvTotalIn = findViewById(R.id.tv_total_in)
         tvTotalOut = findViewById(R.id.tv_total_out)
         tvTotalAvailable = findViewById(R.id.tv_total_available)
-        // THIẾT LẬP SỰ KIỆN CHO NÚT BẤM CHECK
         btnCheck.setOnClickListener {
             val currentPlate = tvLicensePlate.text.toString().trim().uppercase()
             if (currentPlate.isNotEmpty() && currentPlate.length > 3) {
@@ -95,10 +105,6 @@ class HomeActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this, "請拍攝車牌照片！", Toast.LENGTH_SHORT).show()
             }
-        }
-
-        btnInput.setOnClickListener {
-            saveCarInfo(tvLicensePlate.text.toString().trim())
         }
 
         btnOutput.setOnClickListener {
@@ -109,7 +115,35 @@ class HomeActivity : AppCompatActivity() {
                 Toast.makeText(this, "未找到車輛識別碼！", Toast.LENGTH_SHORT).show()
             }
         }
+
+        btnInput.setOnClickListener {
+            val plate = tvLicensePlate.text.toString().trim()
+
+            if (plate.isEmpty()) {
+                Toast.makeText(this, "請先拍攝車牌", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (selectedLotId == null) {
+                Toast.makeText(this, "請先選擇區域 (A/B/C)", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Nếu đã có biển số và đã chọn khu, gọi hàm lấy danh sách vị trí để hiện Dialog
+            handleAreaClick(selectedLotId!!, selectedAreaName)
+        }
         fetchHistory()
+        btnKhuA = findViewById(R.id.khuA)
+        btnKhuB = findViewById(R.id.khuB)
+        btnKhuC = findViewById(R.id.khuC)
+
+        // Lấy danh sách ID bãi đỗ từ API
+        fetchParkingLots()
+
+        // Thiết lập sự kiện click
+        btnKhuA.setOnClickListener { selectArea(idKhuA, "A1", btnKhuA) }
+        btnKhuB.setOnClickListener { selectArea(idKhuB, "A2", btnKhuB) }
+        btnKhuC.setOnClickListener { selectArea(idKhuC, "A3", btnKhuC) }
     }
 
     private fun startCamera() {
@@ -132,7 +166,6 @@ class HomeActivity : AppCompatActivity() {
                     tvLicensePlate.setTextColor(Color.BLUE)
                     takePhotoAndUpload()
                 }
-                // -----------------------
 
             } catch (exc: Exception) {
                 exc.printStackTrace()
@@ -143,7 +176,6 @@ class HomeActivity : AppCompatActivity() {
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
     }
-    // Xử lý kết quả cấp quyền
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -157,6 +189,220 @@ class HomeActivity : AppCompatActivity() {
                 Toast.makeText(this, "需要相機權限", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+    private fun getAccessToken(): String? {
+        val sharedPref = getSharedPreferences("AUTH_PREF", MODE_PRIVATE)
+        return sharedPref.getString("TOKEN", null)
+    }
+    private fun fetchParkingLots() {
+        val token = getAccessToken()
+        val request = Request.Builder()
+            .url("https://parking-car-k7mb.onrender.com/api/v1/parking-lots")
+            .get()
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("API_ERROR", "Không thể lấy danh sách bãi")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val body = response.body?.string()
+                if (response.isSuccessful && body != null) {
+                    val json = JSONObject(body)
+                    val items = json.getJSONObject("data").getJSONArray("item")
+
+                    // Giả sử item 0 là A, 1 là B, 2 là C dựa trên thứ tự API trả về
+                    if (items.length() >= 1) idKhuA = items.getJSONObject(0).getString("id")
+                    if (items.length() >= 2) idKhuB = items.getJSONObject(1).getString("id")
+                    if (items.length() >= 3) idKhuC = items.getJSONObject(2).getString("id")
+
+                    Log.d("API_ID", "Khu A: $idKhuA, Khu B: $idKhuB, Khu C: $idKhuC")
+                }
+            }
+        })
+    }
+    private fun selectArea(lotId: String, areaName: String, selectedBtn: Button) {
+        selectedLotId = lotId
+        selectedAreaName = areaName
+        val buttons = listOf(btnKhuA, btnKhuB, btnKhuC)
+        buttons.forEach { btn ->
+            btn.setBackgroundResource(R.drawable.bg_area_blue)
+            btn.setTextColor(ContextCompat.getColor(this, android.R.color.white))
+        }
+        selectedBtn.setBackgroundResource(R.drawable.bg_area)
+        selectedBtn.setTextColor(ContextCompat.getColor(this, R.color.color_25427A))
+
+        Toast.makeText(this, "已選擇 $areaName 區", Toast.LENGTH_SHORT).show()
+    }
+    private fun handleAreaClick(parkingLotId: String, areaName: String) {
+        val token = getAccessToken()
+
+        // areaName lúc này sẽ là "A1", "A2" hoặc "A3"
+        // URL sẽ là: .../parking-spots?keyword=a1 (hoặc a2, a3)
+        val url = "https://parking-car-k7mb.onrender.com/api/v1/parking-spots?keyword=${areaName.lowercase()}"
+
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread { Toast.makeText(this@HomeActivity, "連線錯誤", Toast.LENGTH_SHORT).show() }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val body = response.body?.string()
+                if (response.isSuccessful && body != null) {
+                    runOnUiThread {
+                        // Mở Dialog hiển thị danh sách đã lọc
+                        showParkingSpotDialog(parkingLotId, areaName, body)
+                    }
+                }
+            }
+        })
+    }
+
+    private fun showParkingSpotDialog(lotId: String, areaName: String, jsonData: String) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_parking_spot, null)
+        val gridLayout = dialogView.findViewById<android.widget.GridLayout>(R.id.gridParkingSpots)
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("區域 $areaName - 選擇車位")
+            .setView(dialogView)
+            .setNegativeButton("取消", null)
+            .create()
+
+        try {
+            val json = JSONObject(jsonData)
+            val dataObj = json.getJSONObject("data")
+            val itemsArray = dataObj.getJSONArray("item")
+
+            gridLayout.removeAllViews()
+            for (i in 0 until itemsArray.length()) {
+                val item = itemsArray.getJSONObject(i)
+                val spotId = item.getString("id")
+                val spotName = item.optString("spotCode", item.optString("parkingSpotName", "位 ${i + 1}"))
+                val isAvailable = item.optBoolean("isAvailable", true)
+                val isOccupied = !isAvailable
+
+                Log.d("DEBUG_PARKING", "Vị trí: $spotName | ID: $spotId | Trống: $isAvailable")
+                val buttonHeightInPx = (60 * resources.displayMetrics.density).toInt()
+
+                val button = Button(this).apply {
+                    if (isOccupied) {
+                        text = "$spotName\n(佔用中)"
+                        setBackgroundColor(Color.parseColor("#D3D3D3"))
+                        setTextColor(Color.parseColor("#808080"))
+                        isEnabled = false
+                        alpha = 0.7f
+                    } else {
+                        text = "$spotName "
+                        setBackgroundColor(Color.parseColor("#4AAD52"))
+                        setTextColor(Color.WHITE)
+                        isEnabled = true
+                        alpha = 1.0f
+                    }
+                    val params = GridLayout.LayoutParams().apply {
+                        width = 0
+                        height = buttonHeightInPx
+                        rowSpec = GridLayout.spec(GridLayout.UNDEFINED, GridLayout.CENTER, 1f)
+                        columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                        setMargins(10, 10, 10, 10)
+                    }
+                    layoutParams = params
+
+                    // 3. Đảm bảo chữ luôn nằm giữa nút
+                    gravity = Gravity.CENTER
+                    setPadding(0, 0, 0, 0) // Xóa padding cũ nếu cần
+
+                    setOnClickListener {
+                        saveCarInfoWithSpot(tvLicensePlate.text.toString(), lotId, spotId)
+                        dialog.dismiss()
+                    }
+                }
+                gridLayout.addView(button)
+            }
+        } catch (e: Exception) {
+            Log.e("JSON_ERROR", "Lỗi phân tích JSON: ${e.message}")
+            Toast.makeText(this, "無法解析車位數據", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+    }
+
+    private fun saveCarInfoWithSpot(plate: String, lotId: String, spotId: String) {
+        val token = getAccessToken()
+        val url = "https://parking-car-k7mb.onrender.com/api/v1/car-info"
+
+        val jsonParams = JSONObject().apply {
+            put("licensePlate", plate.uppercase())
+            put("parkingLotId", lotId)
+            put("parkingSpotId", spotId)
+        }
+
+        val requestBody = jsonParams.toString().toRequestBody("application/json".toMediaTypeOrNull())
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread { Toast.makeText(this@HomeActivity, "儲存失敗", Toast.LENGTH_SHORT).show() }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    // --- BƯỚC QUAN TRỌNG: Cập nhật trạng thái ô đỗ sang FALSE ---
+                    updateSpotStatus(spotId, false)
+
+                    runOnUiThread {
+                        tvLicensePlate.text = ""
+                        layoutActions.visibility = android.view.View.GONE
+                        btnCheck.visibility = android.view.View.VISIBLE
+
+                        fetchHistory() // Cập nhật lại lịch sử đỗ xe
+                        Toast.makeText(this@HomeActivity, "đã đậu xe thành công!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        })
+    }
+    private fun updateSpotStatus(spotId: String, isAvailable: Boolean) {
+        val token = getAccessToken()
+        val url = "https://parking-car-k7mb.onrender.com/api/v1/parking-spots/$spotId"
+
+        // Tạo body chứa trạng thái mới
+        val jsonParams = JSONObject().apply {
+            put("isAvailable", isAvailable)
+        }
+
+        val requestBody = jsonParams.toString().toRequestBody("application/json".toMediaTypeOrNull())
+
+        val request = Request.Builder()
+            .url(url)
+            .patch(requestBody) // Sử dụng phương thức PATCH
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("API_PATCH", "Cập nhật trạng thái ô đỗ thất bại: ${e.message}")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    Log.d("API_PATCH", "Đã cập nhật ô đỗ $spotId thành isAvailable = $isAvailable")
+                } else {
+                    Log.e("API_PATCH", "Lỗi server khi PATCH: ${response.code}")
+                }
+            }
+        })
     }
     private fun takePhotoAndUpload() {
         val imageCapture = imageCapture ?: return
@@ -174,14 +420,11 @@ class HomeActivity : AppCompatActivity() {
                 }
                 override fun onError(exception: ImageCaptureException) {
                     runOnUiThread { Toast.makeText(this@HomeActivity, "攝影錯誤", Toast.LENGTH_SHORT).show() }
-                    // Nếu lỗi vẫn muốn tiếp tục chụp
-//                    scheduleNextCapture()
+
                 }
             }
         )
     }
-
-
     private fun compressImage(file: File): ByteArray {
         val bitmap = BitmapFactory.decodeFile(file.absolutePath)
         val resized = Bitmap.createScaledBitmap(
@@ -199,6 +442,7 @@ class HomeActivity : AppCompatActivity() {
         return stream.toByteArray()
     }
     private fun uploadImage(imageData: ByteArray) {
+        val token = getAccessToken() // Lấy token
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("file", "plate.jpg", imageData.toRequestBody("image/jpeg".toMediaTypeOrNull()))
@@ -207,6 +451,7 @@ class HomeActivity : AppCompatActivity() {
         val request = Request.Builder()
             .url("https://parking-car-k7mb.onrender.com/api/v1/license-plate/upload")
             .post(requestBody)
+            .addHeader("Authorization", "Bearer $token") // THÊM DÒNG NÀY
             .build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -232,81 +477,46 @@ class HomeActivity : AppCompatActivity() {
             }
         })
     }
+    private var currentParkingSpotId: String? = null
     private fun checkPlateInList(plate: String) {
         val currentList = historyAdapter.getList()
-        // Tìm xe có biển trùng và chưa có thời gian ra (exitTime == "null")
-        val carInParking = currentList.find { it.licensePlate == plate && it.exitTime == "null" }
-        runOnUiThread {
-            // 1. Ẩn nút Kiểm tra (btnCheck)
-            btnCheck.visibility = android.view.View.GONE
+        val carInParking = currentList.find { it.licensePlate == plate && it.exitTime == "在場" }
 
-            // 2. Hiện layout chứa 2 nút Input/Output
+        runOnUiThread {
+            btnCheck.visibility = android.view.View.GONE
             layoutActions.visibility = android.view.View.VISIBLE
 
             if (carInParking != null) {
-                // TRƯỜNG HỢP: XE ĐANG Ở TRONG BÃI -> CHỈ CHO PHÉP RA
                 currentCarHistoryId = carInParking.id
-
-                // Nút Input: Disable
+                currentParkingSpotId = carInParking.parkingSpotId
                 btnInput.isEnabled = false
                 btnInput.backgroundTintList = ContextCompat.getColorStateList(this, R.color.color_989B9F)
-
-                // Nút Output: Enable và có màu xanh (Nếu drawable của bạn hỗ trợ)
                 btnOutput.isEnabled = true
-                btnOutput.backgroundTintList = ContextCompat.getColorStateList(this,R.color.color_4AAD52)
+                btnOutput.backgroundTintList = ContextCompat.getColorStateList(this, R.color.color_4AAD52)
                 btnOutput.alpha = 1.0f
 
-                Toast.makeText(this, "車已停在停車場。請按“出口”鍵。", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "車牌 $plate 已在場，請按出口鍵", Toast.LENGTH_SHORT).show()
             } else {
-                // TRƯỜNG HỢP: XE MỚI -> CHỈ CHO PHÉP VÀO
                 currentCarHistoryId = null
-
-                // Nút Input: Enable
+                currentParkingSpotId = null
                 btnInput.isEnabled = true
                 btnInput.alpha = 1.0f
 
-                // Nút Output: Disable
                 btnOutput.isEnabled = false
                 btnOutput.backgroundTintList = ContextCompat.getColorStateList(this, R.color.color_989B9F)
 
-                Toast.makeText(this, "新車。請按“確認”鍵。", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "新車進入，請選擇區域 A1/A2/A3", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    private fun saveCarInfo(plate: String) {
-        val url = "https://parking-car-k7mb.onrender.com/api/v1/car-info"
-        val jsonParams = JSONObject().apply {
-            put("licensePlate", plate.uppercase())
-            put("parkingLotId", "659e7592b3b56d0946b3c7b5")
-            put("parkingSpotId", "759e7592b3b56d0946b3c7b9")
-        }
-        val requestBody = jsonParams.toString().toRequestBody("application/json".toMediaTypeOrNull())
-        val request = Request.Builder().url(url).post(requestBody).build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {}
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    // Trong hàm saveCarInfo và handleCarExit sau khi response thành công:
-                    runOnUiThread {
-                        // Hiện lại nút kiểm tra cho lượt tiếp theo
-                        btnCheck.visibility = android.view.View.VISIBLE
-                        layoutActions.visibility = android.view.View.GONE
-
-                        // Xóa text biển số cũ
-                        tvLicensePlate.text = ""
-                        fetchHistory()
-                    }
-                }
-            }
-        })
     }
     private fun handleCarExit(historyId: String) {
+        val token = getAccessToken()
         val url = "https://parking-car-k7mb.onrender.com/api/v1/car-info/$historyId"
+        val spotIdToRelease = currentParkingSpotId
         val request = Request.Builder()
             .url(url)
             .delete()
+            .addHeader("Authorization", "Bearer $token") // THÊM DÒNG NÀY
             .build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -314,15 +524,16 @@ class HomeActivity : AppCompatActivity() {
             }
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful) {
-                    // Trong hàm saveCarInfo và handleCarExit sau khi response thành công:
+                    if (spotIdToRelease != null) {
+                        updateSpotStatus(spotIdToRelease, true) // 改為 true 表示可用
+                    }
                     runOnUiThread {
-                        // Hiện lại nút kiểm tra cho lượt tiếp theo
                         btnCheck.visibility = android.view.View.VISIBLE
                         layoutActions.visibility = android.view.View.GONE
-
-                        // Xóa text biển số cũ
                         tvLicensePlate.text = ""
+                        currentParkingSpotId = null // 清空暫存
                         fetchHistory()
+                        Toast.makeText(this@HomeActivity, "車輛已出場，車位已釋放", Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     runOnUiThread { Toast.makeText(this@HomeActivity, "API錯誤: ${response.code}", Toast.LENGTH_SHORT).show() }
@@ -331,9 +542,11 @@ class HomeActivity : AppCompatActivity() {
         })
     }
     private fun fetchHistory() {
+        val token = getAccessToken()
         val request = Request.Builder()
             .url("https://parking-car-k7mb.onrender.com/api/v1/history")
             .get()
+            .addHeader("Authorization", "Bearer $token") // THÊM DÒNG NÀY
             .build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -341,6 +554,7 @@ class HomeActivity : AppCompatActivity() {
                 Log.e("FetchHistory", "Failed", e)
             }
 
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun onResponse(call: Call, response: Response) {
                 val body = response.body?.string()
                 if (response.isSuccessful && body != null) {
@@ -352,23 +566,27 @@ class HomeActivity : AppCompatActivity() {
 
                         for (i in 0 until itemsArray.length()) {
                             val item = itemsArray.getJSONObject(i)
+                            val rawEntry = item.getString("createdAt")
+                            val rawExit = item.optString("deletedAt", "null")
+
+                            // 解析 parkingSpotId (請確認你 API 回傳的 Key 名稱是否為 parkingSpotId)
+                            val spotId = item.optString("parkingSpotId", null)
+
                             newList.add(HistoryItem(
                                 id = item.optString("id", i.toString()),
                                 licensePlate = item.getString("licensePlate"),
-                                entryTime = item.getString("createdAt"),
-                                exitTime = item.optString("deletedAt", "null")
+                                entryTime = formatToTaiwanTime(rawEntry),
+                                exitTime = if (rawExit == "null") "在場" else formatToTaiwanTime(rawExit),
+                                parkingSpotId = spotId // 存入這裡
                             ))
                         }
 
                         runOnUiThread {
-                            // Cập nhật lên giao diện
                             historyAdapter.updateData(newList)
-                            // 2. Tính toán thống kê
                             val totalCount = newList.size
-                            val inParkingCount = newList.count { it.exitTime == "null" }
+                            val inParkingCount = newList.count { it.exitTime == "在場" }
                             val outParkingCount = totalCount - inParkingCount
-                            val availableCount = MAX_CAPACITY - inParkingCount // Tính số chỗ trống
-
+                            val availableCount = MAX_CAPACITY - inParkingCount
                             tvTotalAll.text = totalCount.toString()
                             tvTotalIn.text = inParkingCount.toString()
                             tvTotalOut.text = outParkingCount.toString()
@@ -380,6 +598,19 @@ class HomeActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun formatToTaiwanTime(isoString: String?): String {
+        if (isoString == null || isoString == "null" || isoString.isEmpty()) return "---"
+        return try {
+            val instant = java.time.Instant.parse(isoString)
+            val taiwanZone = java.time.ZoneId.of("Asia/Taipei")
+            val localDateTime = instant.atZone(taiwanZone)
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")
+            localDateTime.format(formatter)
+        } catch (e: Exception) {
+            isoString.take(16).replace("T", " ")
+        }
     }
     private fun updateUI(message: String, color: Int, size: Float) {
         runOnUiThread {

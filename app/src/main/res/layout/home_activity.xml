@@ -249,7 +249,6 @@
                 android:layout_margin="@dimen/dp_20"
                 android:background="@drawable/bg_list_latest"
                 android:padding="@dimen/dp_10">
-
                 <!-- Header row -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -257,7 +256,6 @@
                     android:orientation="horizontal"
                     android:paddingTop="@dimen/dp_10"
                     android:paddingBottom="@dimen/dp_10">
-
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -266,7 +264,6 @@
                         android:gravity="center"
                         android:textStyle="bold"
                         android:textColor="@color/color_000000"/>
-
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -275,7 +272,6 @@
                         android:gravity="center"
                         android:textStyle="bold"
                         android:textColor="@color/color_000000"/>
-
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -284,7 +280,6 @@
                         android:gravity="center"
                         android:textStyle="bold"
                         android:textColor="@color/color_000000"/>
-
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -294,12 +289,10 @@
                         android:textStyle="bold"
                         android:textColor="@color/color_000000"/>
                 </LinearLayout>
-
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="#EEEEEE"/>
-
                 <!-- RecyclerView thay cho ListView -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerViewLatest"
